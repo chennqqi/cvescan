@@ -31,6 +31,18 @@ var counter_highrisk int
 
 type RHSA2CVE map[string]string
 
+/*
+rpm2cve	OK
+packagelist  nil
+packages_list nil
+packages_nice
+cve2score
+packages_installed
+CVE2DATE
+
+
+*/
+
 //
 var rpm2cve map[string][]string
 var xmlrpmver map[string][]string
@@ -74,10 +86,10 @@ func loadRhSamapcpe() error {
 		}
 		trimLine := strings.TrimRight(string(line), "\n")
 		elements := strings.Split(trimLine, " ")
-                if len(elements) < 2 {
-                    fmt.Println(len(elements), trimLine)
-                    continue
-                }
+		if len(elements) < 2 {
+			fmt.Println(len(elements), trimLine)
+			continue
+		}
 
 		cvelines := strings.Replace(elements[1], "CAN-", "CVE-", -1)
 		cves := strings.Split(cvelines, ",")
@@ -151,10 +163,10 @@ func cve2Date() error {
 	for {
 		line, err := reader.ReadString('\n')
 		if err == io.EOF {
-                    break
+			break
 		} else {
-                    fmt.Println(err)
-                    return err
+			fmt.Println(err)
+			return err
 		}
 		v := lineExp.FindAllStringSubmatch(string(line), 1)
 		if len(v) > 0 {
@@ -162,11 +174,11 @@ func cve2Date() error {
 			dat := v[0][2]
 			pubs := publicExp.FindAllStringSubmatch(dat, 1)
 			if len(pubs) > 0 {
-			    CVE2DATE[cve] = pubs[0][1]
+				CVE2DATE[cve] = pubs[0][1]
 			}
 		}
 	}
-        return nil
+	return nil
 }
 
 func getPackageList() {
@@ -177,8 +189,12 @@ func getPackageList() {
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
 		err := cmd.Run()
-		if err != nil {
+		fmt.Println("stdout:", stdout.String())
+		fmt.Println("stderr:", stderr.String())
 
+		if err != nil {
+			fmt.Println("Run cmd err", err)
+			return
 		}
 		distro = stdout.String()
 	}
