@@ -68,12 +68,16 @@ func loadRhSamapcpe() error {
 
 	r := bufio.NewReader(f)
 	for {
-		line, _, err := r.ReadLine()
+		line, err := r.ReadString('\n')
 		if err == io.EOF {
 			break
 		}
 		trimLine := strings.TrimRight(string(line), "\n")
 		elements := strings.Split(trimLine, " ")
+                if len(elements) < 2 {
+                    fmt.Println(len(elements), trimLine)
+                    continue
+                }
 
 		cvelines := strings.Replace(elements[1], "CAN-", "CVE-", -1)
 		cves := strings.Split(cvelines, ",")
@@ -145,11 +149,12 @@ func cve2Date() error {
 	lineExp := regexp.MustCompile(`^(CVE-\d{4}-\d+\S*)\s*(.*)`)
 	publicExp := regexp.MustCompile(`public=\d{8}`)
 	for {
-		line, _, err := reader.ReadLine()
+		line, err := reader.ReadString('\n')
 		if err == io.EOF {
-
+                    break
 		} else {
-
+                    fmt.Println(err)
+                    return err
 		}
 		v := lineExp.FindAllStringSubmatch(string(line), 1)
 		if len(v) > 0 {
@@ -157,10 +162,11 @@ func cve2Date() error {
 			dat := v[0][2]
 			pubs := publicExp.FindAllStringSubmatch(dat, 1)
 			if len(pubs) > 0 {
-				CVE2DATE[cve] = pubs[0][1]
+			    CVE2DATE[cve] = pubs[0][1]
 			}
 		}
 	}
+        return nil
 }
 
 func getPackageList() {
