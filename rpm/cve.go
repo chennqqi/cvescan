@@ -69,6 +69,7 @@ func init() {
 	excludePackage = make(map[string]string)
 	vulnerable_software = make(map[string][]string)
 	CVE2DATE = make(map[string]string)
+        packages_nice = make(map[string]string)
 }
 
 func loadRhSamapcpe() error {
@@ -183,7 +184,7 @@ func cve2Date() error {
 
 func getPackageList() {
 	{ //distro
-		cmd := exec.Command("/bin/rpm", `--nosignature --nodigest -qf /etc/redhat-release --qf '%{N}-%{V}-%{R}'`)
+		cmd := exec.Command("/bin/rpm", `--nosignature`, `--nodigest`, `-qf`, `/etc/redhat-release`, `--qf`, `'%{N}-%{V}-%{R}'`)
 		//distro = `/bin/rpm --nosignature --nodigest -qf /etc/redhat-release --qf '%{N}-%{V}-%{R}'`
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
@@ -194,21 +195,24 @@ func getPackageList() {
 
 		if err != nil {
 			fmt.Println("Run cmd err", err)
+                        panic(err)
 			return
 		}
 		distro = stdout.String()
 	}
 
 	{ //packagelist
-		cmd := exec.Command("/bin/rpm", `--nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
+		cmd := exec.Command("/bin/rpm", `--nosignature`,`--nodigest`, `-qa`, `--qf`, `'%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
 		//packagelist = `/bin/rpm --nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}\n`
 		//packagelist = `/bin/rpm --nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}-%{V}-%{R}\n'`
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
 		err := cmd.Run()
+		fmt.Println("stdout:", stdout.String())
+		fmt.Println("stderr:", stderr.String())
 		if err != nil {
-
+                    panic(err)
 		}
 		packagelist = stdout.String()
 		packageExp := regexp.MustCompile(`\s+(.*)`)
@@ -230,14 +234,16 @@ func getPackageList() {
 		}
 	}
 	{ //package_nice
-		cmd := exec.Command("/bin/rpm", `--nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
+		cmd := exec.Command("/bin/rpm", `--nosignature`, `--nodigest`, `-qa`, `--qf`, `'%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
 		//packagelist = `/bin/rpm --nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}-%{V}-%{R}\n'`
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
 		err := cmd.Run()
+		fmt.Println("stdout:", stdout.String())
+		fmt.Println("stderr:", stderr.String())
 		if err != nil {
-
+                    panic(err)
 		}
 		packageExp := regexp.MustCompile(`\s+(.*)`)
 		packagelist = stdout.String()
@@ -382,7 +388,7 @@ func DoRpmCVEScan() {
 	cve2Score()
 	cve2Date()
 	doMatchVulnerable()
-        fmt.Println("rpm2cve:", rpm2cve)
+//        fmt.Println("rpm2cve:", rpm2cve)
         fmt.Println("xmlrpmver:", xmlrpmver)
         fmt.Println("CVE2RHSA:", CVE2RHSA)
         fmt.Println("packagelist", packagelist)
