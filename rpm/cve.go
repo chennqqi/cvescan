@@ -239,7 +239,8 @@ func getPackageList() {
 	packages_installed = make([]string, len(packages_nice))
 	idx := 0
 	for _, name := range packages_nice {
-		packages_installed[idx] = strings.Replace(packages_installed[idx], ".centos", "", -1)
+		packages_installed[idx] = strings.Replace(name, ".centos", "", -1)
+		sort.Strings(packages_installed)
 		idx++
 	}
 }
@@ -276,7 +277,7 @@ func cve2Score() {
 }
 
 func doMatchVulnerable() {
-	for pkgName, pkg := range packages_list {
+	for pkgName, _ := range packages_list {
 		//1. TODO: exclude
 
 		//2. pkgTags[0]->Name pkgTags[1]->version
@@ -351,8 +352,13 @@ func doSummary() {
 		" CVEs=", counter_cve, " HIGHRISK=", counter_highrisk)
 }
 
-func cveCheck() {
+func DoRpmCVEScan() {
 	loadRhSamapcpe()
 	loadRpmToCve("rpm-to-cve.xml")
 	rpm2Cve()
+	getPackageList()
+	cve2Score()
+	cve2Date()
+	doMatchVulnerable()
+	doExport()
 }
