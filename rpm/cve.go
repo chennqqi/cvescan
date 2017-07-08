@@ -366,5 +366,18 @@ func DoRpmCVEScan() {
 	cve2Score()
 	cve2Date()
 	doMatchVulnerable()
+        fmt.Println("rpm2cve:", rpm2cve)
+        fmt.Println("xmlrpmver:", xmlrpmver)
+        fmt.Println("CVE2RHSA:", CVE2RHSA)
+        fmt.Println("packagelist", packagelist)
+        fmt.Println("packages_list:", packages_list)
+        fmt.Println("packages_nice:", packages_nice)
+        fmt.Println("cve2score:", cve2score)
+        fmt.Println("packages_installed:", packages_installed)
+        fmt.Println("CVE2DATE:", CVE2DATE)
+
+
+
 	doExport()
+        doSummary()
 }
