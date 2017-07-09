@@ -70,6 +70,7 @@ func init() {
 	vulnerable_software = make(map[string][]string)
 	CVE2DATE = make(map[string]string)
         packages_nice = make(map[string]string)
+    cve2score = make(map[string]float32)
 }
 
 func loadRhSamapcpe() error {
@@ -160,12 +161,12 @@ func cve2Date() error {
 
 	reader := bufio.NewReader(f)
 	lineExp := regexp.MustCompile(`^(CVE-\d{4}-\d+\S*)\s*(.*)`)
-	publicExp := regexp.MustCompile(`public=\d{8}`)
+	publicExp := regexp.MustCompile(`public=(\d{8})`)
 	for {
 		line, err := reader.ReadString('\n')
 		if err == io.EOF {
 			break
-		} else {
+		} else if err!=nil {
 			fmt.Println(err)
 			return err
 		}
@@ -190,8 +191,8 @@ func getPackageList() {
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
 		err := cmd.Run()
-		fmt.Println("stdout:", stdout.String())
-		fmt.Println("stderr:", stderr.String())
+//		fmt.Println("stdout:", stdout.String())
+//		fmt.Println("stderr:", stderr.String())
 
 		if err != nil {
 			fmt.Println("Run cmd err", err)
@@ -209,8 +210,8 @@ func getPackageList() {
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
 		err := cmd.Run()
-		fmt.Println("stdout:", stdout.String())
-		fmt.Println("stderr:", stderr.String())
+//		fmt.Println("stdout:", stdout.String())
+//		fmt.Println("stderr:", stderr.String())
 		if err != nil {
                     panic(err)
 		}
@@ -240,8 +241,8 @@ func getPackageList() {
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
 		err := cmd.Run()
-		fmt.Println("stdout:", stdout.String())
-		fmt.Println("stderr:", stderr.String())
+//		fmt.Println("stdout:", stdout.String())
+//		fmt.Println("stderr:", stderr.String())
 		if err != nil {
                     panic(err)
 		}
@@ -292,6 +293,9 @@ func cve2Score() {
 		pDef := &rhsaRHEL6.Definitions.Definition[idx]
 		for jdx := 0; jdx < len(pDef.Metadata.Advisory.Cve); jdx++ {
 			pCve := &pDef.Metadata.Advisory.Cve[jdx]
+                        //fmt.Println("CVE:", *pCve)
+                        //fmt.Println("Cvss2:", pCve.Cvss2)
+                        //return
 			if pCve.Cvss2 != "" {
 				cveID := pCve.CVEID
 				scoreID := pCve.Cvss2
@@ -385,20 +389,19 @@ func DoRpmCVEScan() {
 	loadRpmToCve("rpm-to-cve.xml")
 	rpm2Cve()
 	getPackageList()
+        loadRhsa_RHEL6Xml()
 	cve2Score()
 	cve2Date()
 	doMatchVulnerable()
 //        fmt.Println("rpm2cve:", rpm2cve)
-        fmt.Println("xmlrpmver:", xmlrpmver)
-        fmt.Println("CVE2RHSA:", CVE2RHSA)
-        fmt.Println("packagelist", packagelist)
-        fmt.Println("packages_list:", packages_list)
-        fmt.Println("packages_nice:", packages_nice)
-        fmt.Println("cve2score:", cve2score)
-        fmt.Println("packages_installed:", packages_installed)
-        fmt.Println("CVE2DATE:", CVE2DATE)
-
-
+//        fmt.Println("xmlrpmver:", xmlrpmver)
+//        fmt.Println("CVE2RHSA:", CVE2RHSA)
+//        fmt.Println("packagelist", packagelist)
+//       fmt.Println("packages_list:", packages_list)
+//        fmt.Println("packages_nice:", packages_nice)
+//        fmt.Println("cve2score:", cve2score)
+//        fmt.Println("packages_installed:", packages_installed)
+//        fmt.Println("CVE2DATE:", CVE2DATE)
 
 	doExport()
         doSummary()

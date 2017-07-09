@@ -60,12 +60,12 @@ type STRUCT_Updated struct {
 }
 
 type STRUCT_Cve struct {
-	XMLName xml.Name `xml:"http://oval.mitre.org/XMLSchema/oval-definitions-5 cve"`
+	//XMLName xml.Name `xml:"http://oval.mitre.org/XMLSchema/oval-definitions-5 cve"`
 	Public  string   `xml:" public,attr"`
 	Cvss2   string   `xml:" cvss2,attr"`
 	Cvss3   string   `xml:" cvss3,attr"`
 	Href    string   `xml:" href,attr"`
-	CVEID   string   `xml:"cve"`
+	CVEID   string   `xml:",chardata"`
 }
 
 type STRUCT_Generator struct {
