@@ -69,8 +69,8 @@ func init() {
 	excludePackage = make(map[string]string)
 	vulnerable_software = make(map[string][]string)
 	CVE2DATE = make(map[string]string)
-    packages_nice = make(map[string]string)
-    cve2score = make(map[string]float32)
+	packages_nice = make(map[string]string)
+	cve2score = make(map[string]float32)
 }
 
 func loadRhSamapcpe() error {
@@ -166,7 +166,7 @@ func cve2Date() error {
 		line, err := reader.ReadString('\n')
 		if err == io.EOF {
 			break
-		} else if  err != nil{
+		} else if err != nil {
 			fmt.Println(err)
 			return err
 		}
@@ -186,14 +186,14 @@ func cve2Date() error {
 
 func getPackageList() {
 	{ //distro
-		cmd := exec.Command("/bin/rpm", `--nosignature`,`--nodigest`,`-qf`,`/etc/redhat-release`, `--qf`, `'%{N}-%{V}-%{R}'`)
+		cmd := exec.Command("/bin/rpm", `--nosignature`, `--nodigest`, `-qf`, `/etc/redhat-release`, `--qf`, `'%{N}-%{V}-%{R}'`)
 		//distro = `/bin/rpm --nosignature --nodigest -qf /etc/redhat-release --qf '%{N}-%{V}-%{R}'`
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
 		err := cmd.Run()
-//		fmt.Println("stdout:", stdout.String())
-//		fmt.Println("stderr:", stderr.String())
+		//		fmt.Println("stdout:", stdout.String())
+		//		fmt.Println("stderr:", stderr.String())
 
 		if err != nil {
 			fmt.Println("Run cmd err", err)
@@ -203,7 +203,7 @@ func getPackageList() {
 	}
 
 	{ //packagelist
-		cmd := exec.Command("/bin/rpm", `--nosignature`,`--nodigest`,`-qa`,`--qf`,`'%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
+		cmd := exec.Command("/bin/rpm", `--nosignature`, `--nodigest`, `-qa`, `--qf`, `'%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
 		//packagelist = `/bin/rpm --nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}\n`
 		//packagelist = `/bin/rpm --nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}-%{V}-%{R}\n'`
 		var stdout, stderr bytes.Buffer
@@ -214,8 +214,8 @@ func getPackageList() {
 			fmt.Println("Run cmd err", err)
 			return
 		}
-//		fmt.Println("stdout:", stdout.String())
-//		fmt.Println("stderr:", stderr.String())
+		//		fmt.Println("stdout:", stdout.String())
+		//		fmt.Println("stderr:", stderr.String())
 		packagelist = stdout.String()
 		packageExp := regexp.MustCompile(`\s+(.*)`)
 		/*
@@ -233,12 +233,12 @@ func getPackageList() {
 				pkgNameStart := matched[0][2]
 				pkgName := lineString[pkgNameStart:]
 				pkgFullName = strings.Replace(pkgFullName, ".centos", "", -1)
-				packages_list[pkgName] = pkgFullName
+				packages_list[pkgFullName] = pkgName
 			}
 		}
 	}
-	{ //package_nice
-		cmd := exec.Command("/bin/rpm", `--nosignature`,`--nodigest`,`-qa`,`--qf`,`'%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
+	{ //packages_nice
+		cmd := exec.Command("/bin/rpm", `--nosignature`, `--nodigest`, `-qa`, `--qf`, `'%{N}-%{epochnum}:%{V}-%{R} %{N}-%{V}-%{R}\n'`)
 		//packagelist = `/bin/rpm --nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}-%{V}-%{R}\n'`
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
@@ -264,14 +264,17 @@ func getPackageList() {
 				pkgNameStart := matched[0][2]
 				pkgName := lineString[pkgNameStart:]
 				pkgFullName = strings.Replace(pkgFullName, ".centos", "", -1)
-				packages_nice[pkgName] = pkgFullName
+//                fmt.Println("linestring", lineString)
+//                fmt.Println(matched)
+ //               panic(nil)
+				packages_nice[pkgFullName] = pkgName
 			}
 		}
 	}
 	packages_installed = make([]string, len(packages_nice))
 	idx := 0
-	for _, name := range packages_nice {
-		packages_installed[idx] = strings.Replace(name, ".centos", "", -1)
+	for pkgFullName, _:= range packages_nice {
+		packages_installed[idx] = strings.Replace(pkgFullName, ".centos", "", -1)
 		sort.Strings(packages_installed)
 		idx++
 	}
@@ -291,12 +294,12 @@ func loadRhsa_RHEL6Xml() error {
 
 func cve2Score() {
 	scoreExp := regexp.MustCompile(`(\d+(\.\d+)?)`)
-//    fmt.Println("rhsaRHEL6", rhsaRHEL6)
+	//    fmt.Println("rhsaRHEL6", rhsaRHEL6)
 	for idx := 0; idx < len(rhsaRHEL6.Definitions.Definition); idx++ {
 		pDef := &rhsaRHEL6.Definitions.Definition[idx]
 		for jdx := 0; jdx < len(pDef.Metadata.Advisory.Cve); jdx++ {
 			pCve := &pDef.Metadata.Advisory.Cve[jdx]
-        //    fmt.Println("*pCVE:", *pCve)
+			//    fmt.Println("*pCVE:", *pCve)
 			if pCve.Cvss2 != "" {
 				cveID := pCve.CVEID
 				scoreID := pCve.Cvss2
@@ -310,21 +313,33 @@ func cve2Score() {
 }
 
 func doMatchVulnerable() {
-	for _, pkgNameFull := range packages_installed {
+	for _, pkg := range packages_installed {
 		//1. TODO: exclude
 
 		//2. pkgTags[0]->Name pkgTags[1]->version
-		pkgTags := strings.Split(pkgNameFull, ":")
-		_, exist := xmlrpmver[pkgTags[0]]
+		pkgTags := strings.Split(pkg, ":")
+		if len(pkgTags) < 1 {
+			continue
+		}
+		pkgTag := pkgTags[0]
+		versions, exist := xmlrpmver[pkgTag]
 		if !exist {
 			continue
 		}
 
 		//compare from version list
-		for _, version := range xmlrpmver[pkgTags[0]] {
-			pkgv1 := packages_nice[pkgTags[0]]
-			pkgv2 := packages_list[pkgTags[0]] + "-" + version
+		for _, version := range versions {
 
+            fmt.Println("pkgTag", pkgTag)
+
+			pkgv1, exist1 := packages_nice[pkg]
+            pkgv2, exist2 := packages_list[pkg]
+			pkgv2 += "-" + version
+            if !exist1 || !exist2{
+                continue
+            }
+			fmt.Println("pkgv1", pkgv1)
+			fmt.Println("pkgv2", pkgv2)
 			switch RpmCompare(pkgv1, pkgv2) {
 			case 1:
 				counter_pkg++
@@ -371,7 +386,7 @@ func doExport() {
 		}
 		report.DATE = date
 
-		fmt.Printf("%-40s%-20s\n", cve, score)
+		fmt.Printf("%s %f %s\n", cve, score, date)
 		counter_cve++
 		if score >= 7.0 {
 			counter_highrisk++
@@ -390,21 +405,20 @@ func DoRpmCVEScan() {
 	loadRpmToCve("rpm-to-cve.xml")
 	rpm2Cve()
 	getPackageList()
-    loadRhsa_RHEL6Xml()
+	loadRhsa_RHEL6Xml()
 	cve2Score()
 	cve2Date()
-
-//	fmt.Println("xmlrpmver:", xmlrpmver)
-//	fmt.Println("CVE2RHSA:", CVE2RHSA)
-//	fmt.Println("packagelist", packagelist)
-//	fmt.Println("packages_list:", packages_list)
-//	fmt.Println("packages_nice:", packages_nice)
-	fmt.Println("cve2score:", cve2score)
-//	fmt.Println("packages_installed:", packages_installed)
-	fmt.Println("VULS:", vulnerable_software)
-//	fmt.Println("CVE2DATE:", CVE2DATE)
-    return
 	doMatchVulnerable()
+
+	//fmt.Println("xmlrpmver:", xmlrpmver)
+	//	fmt.Println("CVE2RHSA:", CVE2RHSA)
+	//	fmt.Println("packagelist", packagelist)
+	//	fmt.Println("packages_list:", packages_list)
+//		fmt.Println("packages_nice:", packages_nice)
+	//	fmt.Println("cve2score:", cve2score)
+//		fmt.Println("packages_installed:", packages_installed)
+	fmt.Println("VULS:", vulnerable_software)
+	//	fmt.Println("CVE2DATE:", CVE2DATE)
 
 	doExport()
 }
