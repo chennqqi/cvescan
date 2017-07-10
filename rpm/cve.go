@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/zcalusic/sysinfo"
 )
 
 var ErrNotUpdated = errors.New("Not Update")
@@ -108,4 +110,8 @@ func (r *Resource) FetchUpdateResource() (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (s *RPMScanner) NewRpmCVEScanner(cacheDir string) {
+
 }

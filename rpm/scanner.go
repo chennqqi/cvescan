@@ -21,10 +21,7 @@ type RPMScanner struct {
 	path_rpm2cve    string
 	path_cve2date   string
 	path_RHEL       string
-
-	path_rpmbin string
-
-	hostname string
+	path_rpmbin     string
 
 	//xml
 	xmlrpm    STRUCT_Rpms
@@ -58,13 +55,8 @@ type RPMScanner struct {
 }
 
 func (s *RPMScanner) Init() error {
-	s.hostname, _ = os.Hostname()
 	s.excludePackage = make(map[string]string)
 	return nil
-}
-
-func (s *RPMScanner) NewRpmCVEScanner(dirCache string) {
-
 }
 
 func (s *RPMScanner) loadRpmToCve() error {
@@ -425,10 +417,6 @@ func (s *RPMScanner) doSummary() {
 	fmt.Println("TOTAL_UNIQ_PACKAGES=", len(s.packages_installed),
 		", AFFECTED_PACKAGES=", s.counter_pkg,
 		" CVEs=", s.counter_cve, " HIGHRISK=", s.counter_highrisk)
-}
-
-func DoRpmCVEScan1() {
-
 }
 
 func (s *RPMScanner) Scan() error {
