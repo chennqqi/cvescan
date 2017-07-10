@@ -33,12 +33,12 @@ type RHSA2CVE map[string]string
 
 /*
 rpm2cve	OK
-packagelist  nil
-packages_list nil
+packagelist
+packages_list
 packages_nice
-cve2score
+cve2score					nil
 packages_installed
-CVE2DATE
+CVE2DATE					nil
 
 
 */
@@ -69,7 +69,6 @@ func init() {
 	excludePackage = make(map[string]string)
 	vulnerable_software = make(map[string][]string)
 	CVE2DATE = make(map[string]string)
-        packages_nice = make(map[string]string)
 }
 
 func loadRhSamapcpe() error {
@@ -184,7 +183,7 @@ func cve2Date() error {
 
 func getPackageList() {
 	{ //distro
-		cmd := exec.Command("/bin/rpm", `--nosignature`, `--nodigest`, `-qf`, `/etc/redhat-release`, `--qf`, `'%{N}-%{V}-%{R}'`)
+		cmd := exec.Command("/bin/rpm", `--nosignature --nodigest -qf /etc/redhat-release --qf '%{N}-%{V}-%{R}'`)
 		//distro = `/bin/rpm --nosignature --nodigest -qf /etc/redhat-release --qf '%{N}-%{V}-%{R}'`
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
@@ -195,55 +194,52 @@ func getPackageList() {
 
 		if err != nil {
 			fmt.Println("Run cmd err", err)
-                        panic(err)
 			return
 		}
 		distro = stdout.String()
 	}
 
 	{ //packagelist
-		cmd := exec.Command("/bin/rpm", `--nosignature`,`--nodigest`, `-qa`, `--qf`, `'%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
+		cmd := exec.Command("/bin/rpm", `--nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
 		//packagelist = `/bin/rpm --nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}\n`
 		//packagelist = `/bin/rpm --nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}-%{V}-%{R}\n'`
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
 		err := cmd.Run()
-		fmt.Println("stdout:", stdout.String())
-		fmt.Println("stderr:", stderr.String())
 		if err != nil {
-                    panic(err)
+
 		}
 		packagelist = stdout.String()
 		packageExp := regexp.MustCompile(`\s+(.*)`)
 		/*
 			my %packages_list = map  { split(/\s+/, $_, 2) } grep { m/\s+/ } split(/\n/, $packagelist);
 		*/
+		//LINE: ''libselinux-utils-0:2.0.94-5.8.el6 libselinux-utils
 		lines := strings.Split(packagelist, "\n")
 		for idx := 0; idx < len(lines); idx++ {
 			// {完整项起始, 完整项结束, 子项起始, 子项结束, 子项起始, 子项结束, ...},
-			matched := packageExp.FindAllStringSubmatchIndex(lines[idx], 1)
+			lineString := strings.TrimLeft(lines[idx], `'`)
+			matched := packageExp.FindAllStringSubmatchIndex(lineString, 1)
 			if len(matched) > 0 {
 				pkgFullNameEnd := matched[0][0] //
-				pkgFullName := lines[idx][:pkgFullNameEnd]
+				pkgFullName := lineString[:pkgFullNameEnd]
 				pkgNameStart := matched[0][2]
-				pkgName := lines[idx][pkgNameStart:]
+				pkgName := lineString[pkgNameStart:]
 				pkgFullName = strings.Replace(pkgFullName, ".centos", "", -1)
 				packages_list[pkgName] = pkgFullName
 			}
 		}
 	}
 	{ //package_nice
-		cmd := exec.Command("/bin/rpm", `--nosignature`, `--nodigest`, `-qa`, `--qf`, `'%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
+		cmd := exec.Command("/bin/rpm", `--nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
 		//packagelist = `/bin/rpm --nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}-%{V}-%{R}\n'`
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
 		err := cmd.Run()
-		fmt.Println("stdout:", stdout.String())
-		fmt.Println("stderr:", stderr.String())
 		if err != nil {
-                    panic(err)
+
 		}
 		packageExp := regexp.MustCompile(`\s+(.*)`)
 		packagelist = stdout.String()
@@ -253,12 +249,13 @@ func getPackageList() {
 		lines := strings.Split(packagelist, "\n")
 		for idx := 0; idx < len(lines); idx++ {
 			// {完整项起始, 完整项结束, 子项起始, 子项结束, 子项起始, 子项结束, ...},
-			matched := packageExp.FindAllStringSubmatchIndex(lines[idx], 1)
+			lineString := strings.TrimLeft(lines[idx], `'`)
+			matched := packageExp.FindAllStringSubmatchIndex(lineString, 1)
 			if len(matched) > 0 {
 				pkgFullNameEnd := matched[0][0] //
-				pkgFullName := lines[idx][:pkgFullNameEnd]
+				pkgFullName := lineString[:pkgFullNameEnd]
 				pkgNameStart := matched[0][2]
-				pkgName := lines[idx][pkgNameStart:]
+				pkgName := lineString[pkgNameStart:]
 				pkgFullName = strings.Replace(pkgFullName, ".centos", "", -1)
 				packages_nice[pkgName] = pkgFullName
 			}
@@ -305,7 +302,7 @@ func cve2Score() {
 }
 
 func doMatchVulnerable() {
-	for pkgName, _ := range packages_list {
+	for pkgName, _ := range packages_installed {
 		//1. TODO: exclude
 
 		//2. pkgTags[0]->Name pkgTags[1]->version
@@ -388,18 +385,16 @@ func DoRpmCVEScan() {
 	cve2Score()
 	cve2Date()
 	doMatchVulnerable()
-//        fmt.Println("rpm2cve:", rpm2cve)
-        fmt.Println("xmlrpmver:", xmlrpmver)
-        fmt.Println("CVE2RHSA:", CVE2RHSA)
-        fmt.Println("packagelist", packagelist)
-        fmt.Println("packages_list:", packages_list)
-        fmt.Println("packages_nice:", packages_nice)
-        fmt.Println("cve2score:", cve2score)
-        fmt.Println("packages_installed:", packages_installed)
-        fmt.Println("CVE2DATE:", CVE2DATE)
 
-
+	fmt.Println("xmlrpmver:", xmlrpmver)
+	fmt.Println("CVE2RHSA:", CVE2RHSA)
+	fmt.Println("packagelist", packagelist)
+	fmt.Println("packages_list:", packages_list)
+	fmt.Println("packages_nice:", packages_nice)
+	fmt.Println("cve2score:", cve2score)
+	fmt.Println("packages_installed:", packages_installed)
+	fmt.Println("VULS:", vulnerable_software)
+	fmt.Println("CVE2DATE:", CVE2DATE)
 
 	doExport()
-        doSummary()
 }
