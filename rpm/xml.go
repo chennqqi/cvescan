@@ -65,7 +65,7 @@ type STRUCT_Cve struct {
 	Cvss2   string   `xml:" cvss2,attr"`
 	Cvss3   string   `xml:" cvss3,attr"`
 	Href    string   `xml:" href,attr"`
-	CVEID   string   `xml:"cve"`
+	CVEID   string   `xml:",chardata"`
 }
 
 type STRUCT_Generator struct {

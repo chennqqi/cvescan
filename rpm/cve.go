@@ -183,7 +183,7 @@ func cve2Date() error {
 
 func getPackageList() {
 	{ //distro
-		cmd := exec.Command("/bin/rpm", `--nosignature --nodigest -qf /etc/redhat-release --qf '%{N}-%{V}-%{R}'`)
+		cmd := exec.Command("/bin/rpm", `--nosignature`,`--nodigest`,`-qf`,`/etc/redhat-release`, `-qf '%{N}-%{V}-%{R}'`)
 		//distro = `/bin/rpm --nosignature --nodigest -qf /etc/redhat-release --qf '%{N}-%{V}-%{R}'`
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
@@ -200,7 +200,7 @@ func getPackageList() {
 	}
 
 	{ //packagelist
-		cmd := exec.Command("/bin/rpm", `--nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
+		cmd := exec.Command("/bin/rpm", `--nosignature`,`--nodigest`,`-qa`,`--qf`,`'%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
 		//packagelist = `/bin/rpm --nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}\n`
 		//packagelist = `/bin/rpm --nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}-%{V}-%{R}\n'`
 		var stdout, stderr bytes.Buffer
@@ -208,8 +208,11 @@ func getPackageList() {
 		cmd.Stderr = &stderr
 		err := cmd.Run()
 		if err != nil {
-
+			fmt.Println("Run cmd err", err)
+			return
 		}
+		fmt.Println("stdout:", stdout.String())
+		fmt.Println("stderr:", stderr.String())
 		packagelist = stdout.String()
 		packageExp := regexp.MustCompile(`\s+(.*)`)
 		/*
@@ -232,14 +235,15 @@ func getPackageList() {
 		}
 	}
 	{ //package_nice
-		cmd := exec.Command("/bin/rpm", `--nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
+		cmd := exec.Command("/bin/rpm", `--nosignature`,`--nodigest`,`-qa`,`--qf`,`'%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
 		//packagelist = `/bin/rpm --nosignature --nodigest -qa --qf '%{N}-%{epochnum}:%{V}-%{R} %{N}-%{V}-%{R}\n'`
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
 		err := cmd.Run()
 		if err != nil {
-
+			fmt.Println("Run cmd err", err)
+			return
 		}
 		packageExp := regexp.MustCompile(`\s+(.*)`)
 		packagelist = stdout.String()
@@ -302,11 +306,11 @@ func cve2Score() {
 }
 
 func doMatchVulnerable() {
-	for pkgName, _ := range packages_installed {
+	for _, pkgNameFull := range packages_installed {
 		//1. TODO: exclude
 
 		//2. pkgTags[0]->Name pkgTags[1]->version
-		pkgTags := strings.Split(pkgName, ":")
+		pkgTags := strings.Split(pkgNameFull, ":")
 		_, exist := xmlrpmver[pkgTags[0]]
 		if !exist {
 			continue
@@ -386,8 +390,8 @@ func DoRpmCVEScan() {
 	cve2Date()
 	doMatchVulnerable()
 
-	fmt.Println("xmlrpmver:", xmlrpmver)
-	fmt.Println("CVE2RHSA:", CVE2RHSA)
+//	fmt.Println("xmlrpmver:", xmlrpmver)
+//	fmt.Println("CVE2RHSA:", CVE2RHSA)
 	fmt.Println("packagelist", packagelist)
 	fmt.Println("packages_list:", packages_list)
 	fmt.Println("packages_nice:", packages_nice)
