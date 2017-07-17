@@ -1,4 +1,4 @@
-package rpm
+package cvescan
 
 import (
 	"bufio"
@@ -16,12 +16,20 @@ import (
 	"github.com/infogulch/uniq"
 )
 
+type CVEStat struct {
+	//for stat
+	CounterCVE      int
+	CounterPkg      int
+	CounterHighrisk int
+}
+
 type RPMScanner struct {
 	path_rhsamapcpe string
 	path_rpm2cve    string
 	path_cve2date   string
 	path_RHEL       string
 	path_rpmbin     string
+	path_exclude    string
 
 	//xml
 	xmlrpm    STRUCT_Rpms
@@ -40,7 +48,7 @@ type RPMScanner struct {
 	CVE2RHSA            map[string]string
 	packagelist         string
 	packages_list       map[string]string
-	excludePackage      map[string]string
+	excludePackage      map[string]bool
 	packages_nice       map[string]string
 	vulnerable_software map[string][]string
 	packages_installed  []string
@@ -55,7 +63,7 @@ type RPMScanner struct {
 }
 
 func (s *RPMScanner) Init() error {
-	s.excludePackage = make(map[string]string)
+	s.excludePackage = make(map[string]bool)
 	return nil
 }
 

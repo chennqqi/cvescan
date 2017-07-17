@@ -1,4 +1,4 @@
-package rpm
+package cvescan
 
 /*
 #include "rpm.hxx"
@@ -18,8 +18,9 @@ import (
 func RpmCompare(a, b string) int {
 	pva := &C.EVR{}
 	pvb := &C.EVR{}
-//	defer C.free(unsafe.Pointer(pva))
-//	defer C.free(unsafe.Pointer(pvb))
+	// go initialized memory no need free
+	//	defer C.free(unsafe.Pointer(pva))
+	//	defer C.free(unsafe.Pointer(pvb))
 
 	pStrA := C.CString(a)
 	defer C.free(unsafe.Pointer(pStrA))
