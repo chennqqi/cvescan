@@ -1,6 +1,6 @@
 package cvescan
 
-type RuleResources []Resource
+type RuleResources []*Resource
 
 func (r RuleResources) Valid() error {
 	for idx := 0; idx < len(r); idx++ {

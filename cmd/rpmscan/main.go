@@ -9,20 +9,20 @@ import (
 
 func main() {
 	_, v, _ := cvescan.RpmGetDistro("/bin/rpm")
-	res := &cvescan.RuleResources{
-		cvescan.Resource{
+	res := cvescan.RuleResources{
+		&cvescan.Resource{
 			Url:  "https://www.redhat.com/security/data/metrics/rhsamapcpe.txt",
 			Path: "/tmp/rhsamapcpe.txt",
 		},
-		cvescan.Resource{
+		&cvescan.Resource{
 			Url:  "https://www.redhat.com/security/data/metrics/rpm-to-cve.xml",
 			Path: "/tmp/rpm-to-cve.xml",
 		},
-		cvescan.Resource{
+		&cvescan.Resource{
 			Url:  "https://www.redhat.com/security/data/metrics/cve_dates.txt",
 			Path: "/tmp/cve_dates.txt",
 		},
-		cvescan.Resource{
+		&cvescan.Resource{
 			Url:  fmt.Sprintf("https://www.redhat.com/security/data/oval/com.redhat.rhsa-RHEL%d.xml", v),
 			Path: "/tmp/com.redhat.rhsa-RHELx.xml",
 		},
@@ -33,10 +33,10 @@ func main() {
 	}
 
 	cfg := &cvescan.RSConfig{
-		Path_rhsamapcpe: (*res)[0].Path,
-		Path_rpm2cve:    (*res)[1].Path,
-		Path_cve2date:   (*res)[2].Path,
-		Path_RHEL:       (*res)[3].Path,
+		Path_rhsamapcpe: res[0].Path,
+		Path_rpm2cve:    res[1].Path,
+		Path_cve2date:   res[2].Path,
+		Path_RHEL:       res[3].Path,
 		Path_rpmbin:     "/bin/rpm",
 	}
 	s, err := cvescan.NewRpmScanner(cfg)

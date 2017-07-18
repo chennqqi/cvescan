@@ -26,7 +26,7 @@ func (r *Resource) FetchUpdateResource() (bool, error) {
 	} else {
 		exist = true
 	}
-
+    rawSize := st.Size()
 	client := &http.Client{}
 
 	downloadFunc := func(fpath, furl string) error {
@@ -69,7 +69,7 @@ func (r *Resource) FetchUpdateResource() (bool, error) {
 		}
 		defer resp.Body.Close()
 
-		if resp.ContentLength != st.Size() {
+		if resp.ContentLength != rawSize {
 			return false, nil
 		}
 		return true, nil
