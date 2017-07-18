@@ -345,7 +345,7 @@ func (s *RPMScanner) doExport(rpt *ScanReport) {
 	for cvepkg, cves := range rpt.vulnerable_software {
 		sort.Strings(rpt.vulnerable_software[cvepkg])
 		cveReports := make([]CVEReport, len(cves))
-		var totalScore float32
+		var maxScore float32
 		for k, cve := range cves {
 			var score float32
 			if s, exist := s.cve2score[cve]; exist {
@@ -363,15 +363,16 @@ func (s *RPMScanner) doExport(rpt *ScanReport) {
 			if _, exist := s.CVE2DATE[cve]; exist {
 				date = s.CVE2DATE[cve]
 			}
-			totalScore += score
 			report.Date = date
 			report.Score = score
 			report.CVE = cve
 			cveReports[k] = report
-
+			if maxScore < score {
+				maxScore = score
+			}
 			rpt.CounterCVE++
 		}
-		if totalScore >= 7.0 {
+		if maxScore >= 7.0 {
 			rpt.CounterHighrisk++
 		}
 		rpt.Reports[cvepkg] = cveReports
