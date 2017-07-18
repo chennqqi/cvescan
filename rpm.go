@@ -79,8 +79,9 @@ func NewRpmScanner(cfg *RSConfig) (*RPMScanner, error) {
 	if err != nil {
 		return nil, err
 	}
-	if (st.Mode() & os.ModeExclusive) == 0 {
-		return nil, err
+	if (st.Mode() & os.ModeExclusive) == 0 && false {
+                fmt.Println("bin not excutebale", st.Mode())
+		return nil,  ErrNotExcute
 	}
 
 	//get os version

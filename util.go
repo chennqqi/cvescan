@@ -18,6 +18,7 @@ type Resource struct {
 
 func (r *Resource) FetchUpdateResource() (bool, error) {
 	var exist bool
+	var rawSize int64
 	st, err := os.Stat(r.Path)
 	if err != nil && os.IsNotExist(err) {
 		exist = false
@@ -25,13 +26,13 @@ func (r *Resource) FetchUpdateResource() (bool, error) {
 		return false, err
 	} else {
 		exist = true
+		rawSize = st.Size()
 	}
-    rawSize := st.Size()
 	client := &http.Client{}
 
 	downloadFunc := func(fpath, furl string) error {
 		req, _ := http.NewRequest("GET", furl, nil)
-		req.Header.Set("", "")
+//		req.Header.Set("", "")
 		resp, err := client.Do(req)
 		if err != nil {
 			return err
@@ -47,7 +48,7 @@ func (r *Resource) FetchUpdateResource() (bool, error) {
 			reader = resp.Body
 		}
 
-		f, err := os.OpenFile(fpath, os.O_WRONLY, 0644)
+		f, err := os.OpenFile(fpath, os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			return err
 		}
@@ -70,28 +71,28 @@ func (r *Resource) FetchUpdateResource() (bool, error) {
 		defer resp.Body.Close()
 
 		if resp.ContentLength != rawSize {
-			return false, nil
+			return true, nil
 		}
-		return true, nil
+		return false, nil
 	}
 
 	var retry int
 	var down bool
-
-	//checkupdate
-	for retry = 0; retry < 3; {
-		down, err = checkUpdateFunc(r.Path, r.Url)
-		if err == nil {
-			break
+	if exist {
+		//checkupdate
+		for retry = 0; retry < 3; {
+			down, err = checkUpdateFunc(r.Path, r.Url)
+			if err == nil {
+				break
+			}
 		}
-	}
-
-	//network error
-	if retry == 3 {
-		return exist, err
-	}
-	if !down {
-		return exist, nil
+		//network error
+		if retry == 3 {
+			return exist, err
+		}
+		if !down {
+			return exist, nil
+		}
 	}
 
 	//download

@@ -168,11 +168,8 @@ func (s *RPMScanner) loadCveDate() error {
 }
 
 func (s *RPMScanner) getPackageList() error {
-	//packages_list
 	s.packages_list = make(map[string]string)
-	//packages_nice
 	s.packages_nice = make(map[string]string)
-	//packages_installed
 
 	{ //packagelist
 		cmd := exec.Command(s.Path_rpmbin, `--nosignature`, `--nodigest`, `-qa`, `--qf`, `'%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)

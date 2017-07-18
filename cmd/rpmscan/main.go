@@ -40,11 +40,16 @@ func main() {
 		Path_rpmbin:     "/bin/rpm",
 	}
 	s, err := cvescan.NewRpmScanner(cfg)
-	if err != nil {
+	if err != nil || s==nil {
 		fmt.Println("new scanner error", err)
 		return
 	}
 	tsNow := time.Now()
+        err = s.LoadRule()
+        if err!=nil{
+            fmt.Println("load rule error", err)
+            return
+        }
 	rpt, err := s.Scan()
 	if err != nil {
 		fmt.Println("scan error:", err)
