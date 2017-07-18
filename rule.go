@@ -76,32 +76,29 @@ func (s *RPMScanner) loadRpmToCve() error {
 	return nil
 }
 
-func (s *RPMScanner) getDistro() error {
+func RpmGetDistro(rpmPath string) (string, int, error) {
+	var distro string
 	{ //distro
-		cmd := exec.Command(s.Path_rpmbin, `--nosignature`, `--nodigest`, `-qf`, `/etc/redhat-release`, `--qf`, `'%{N}-%{V}-%{R}'`)
+		cmd := exec.Command(rpmPath, `--nosignature`, `--nodigest`, `-qf`, `/etc/redhat-release`, `--qf`, `'%{N}-%{V}-%{R}'`)
 		//distro = `/bin/rpm --nosignature --nodigest -qf /etc/redhat-release --qf '%{N}-%{V}-%{R}'`
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
 		err := cmd.Run()
-		//fmt.Println("stdout:", stdout.String())
-		//fmt.Println("stderr:", stderr.String())
 		if err != nil {
-			fmt.Println("Run cmd err", err)
-			return err
+			return "", 6, err
 		}
-		s.distro = stdout.String()
+		distro = stdout.String()
 	}
-	if strings.Contains(s.distro, ".el7") {
-		s.distroVersion = "el7"
-	} else if strings.Contains(s.distro, ".el6") {
-		s.distroVersion = "el6"
-	} else if strings.Contains(s.distro, ".el5") {
-		s.distroVersion = "el5"
-	} else {
-		return errors.New("unknown distro version")
+	if strings.Contains(distro, ".el7") {
+		return distro, 7, nil
+	} else if strings.Contains(distro, ".el6") {
+		return distro, 6, nil
+	} else if strings.Contains(distro, ".el5") {
+		return distro, 5, nil
 	}
-	return nil
+	//treat as centos 6
+	return distro, 6, errors.New("unknown distro version")
 }
 
 func (s *RPMScanner) loadRhSamapcpe() error {
@@ -168,10 +165,6 @@ func (s *RPMScanner) loadCveDate() error {
 		}
 	}
 	return nil
-}
-
-func (s *RPMScanner) getOsVersion() (int, error) {
-
 }
 
 func (s *RPMScanner) getPackageList() error {
@@ -294,8 +287,20 @@ func (s *RPMScanner) loadRhsa_RHELxXml() error {
 }
 
 func (s *RPMScanner) doScan(rpt *ScanReport) {
+	var excludePkgFunc func(string) bool
+	if s.excludeRegExp != nil {
+		excludePkgFunc = s.excludeRegExp.MatchString
+	} else {
+		excludePkgFunc = func(pkg string) bool {
+			return false
+		}
+	}
+
 	for _, pkg := range s.packages_installed {
-		//1. TODO: exclude
+		//1. exclude
+		if excludePkgFunc(pkg) {
+			continue
+		}
 
 		//2. pkgTags[0]->Name pkgTags[1]->version
 		pkgTags := strings.Split(pkg, ":")
@@ -310,19 +315,18 @@ func (s *RPMScanner) doScan(rpt *ScanReport) {
 
 		//compare from version list
 		for _, version := range versions {
-			//fmt.Println("pkgTag", pkgTag)
-
 			pkgv1, exist1 := s.packages_nice[pkg]
 			pkgv2, exist2 := s.packages_list[pkg]
 			pkgv2 += "-" + version
 			if !exist1 || !exist2 {
 				continue
 			}
+
 			//fmt.Println("pkgv1", pkgv1)
 			//fmt.Println("pkgv2", pkgv2)
 			switch RpmCompare(pkgv1, pkgv2) {
 			case 1:
-				s.counter_pkg++
+				rpt.CounterPkg++
 				newver := pkgTags[0] + ":" + version
 				vuls, exist := s.rpm2cve[newver]
 				if exist {
@@ -340,12 +344,7 @@ func (s *RPMScanner) doScan(rpt *ScanReport) {
 }
 
 func (s *RPMScanner) doExport(rpt *ScanReport) {
-	var report struct {
-		DATE string
-		RHSA string
-		PKG  string
-		NAME string
-	}
+	var report CVEReport
 	for cve, _ := range rpt.vulnerable_software {
 		sort.Strings(rpt.vulnerable_software[cve])
 		var score float32
@@ -364,18 +363,13 @@ func (s *RPMScanner) doExport(rpt *ScanReport) {
 		if _, exist := s.CVE2DATE[cve]; exist {
 			date = s.CVE2DATE[cve]
 		}
-		report.DATE = date
+		report.Date = date
+		report.Score = score
+		rpt.Reports = append(rpt.Reports, report)
 
-		fmt.Printf("%s %f %s\n", cve, score, date)
-		s.counter_cve++
+		rpt.CounterCVE++
 		if score >= 7.0 {
-			s.counter_highrisk++
+			rpt.CounterHighrisk++
 		}
 	}
-}
-
-func (s *RPMScanner) doSummary() {
-	fmt.Println("TOTAL_UNIQ_PACKAGES=", len(s.packages_installed),
-		", AFFECTED_PACKAGES=", s.counter_pkg,
-		" CVEs=", s.counter_cve, " HIGHRISK=", s.counter_highrisk)
 }

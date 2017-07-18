@@ -3,8 +3,8 @@ package cvescan
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
-	"os/exec"
 	"regexp"
 )
 
@@ -20,18 +20,21 @@ type RSConfig struct {
 }
 
 type ScanReport struct {
-	CounterCVE      int
-	CounterPkg      int
-	CounterHighrisk int
-
+	CounterCVE          int
+	CounterPkg          int
+	CounterHighrisk     int
+	Reports             []CVEReport
 	vulnerable_software map[string][]string
 }
 
 type CVEReport struct {
-	PkgName  string   `json:"package"`
-	FullName string   `json:"fullname"`
-	Date     string   `json:"date"`
-	CVE      []string `json:"cvelist"`
+	PkgName  string `json:"package"`
+	FullName string `json:"fullname"`
+
+	RHSA  string  `json:"rhsa"`
+	Date  string  `json:"date"`
+	CVE   string  `json:"cve"`
+	Score float32 `json:"score"`
 }
 
 type RPMScanner struct {
@@ -61,30 +64,33 @@ type RPMScanner struct {
 	cve2score          map[string]float32
 	CVE2DATE           map[string]string
 
-	//for stat
-	counter_cve      int
-	counter_pkg      int
-	counter_highrisk int
-	counter_rpm2cve  int
+	counter_rpm2cve int
 }
 
 func NewRpmScanner(cfg *RSConfig) (*RPMScanner, error) {
 	var rs RPMScanner
 	rs.RSConfig = cfg
-	if cfg.Path_rpmbin != "" {
-		st, err := os.Stat(cfg.Path_rpmbin)
-		if err != nil {
-			return nil, err
-		}
-		if (st.Mode() & os.ModeExclusive) == 0 {
-			return nil, err
-		}
-		st.Mode().Perm()
-	} else {
-		path := "/bin/rpm"
-	}
-	//get os version
 
+	//TODO: verify mode 's' bit musn't set
+	if cfg.Path_rpmbin == "" {
+		cfg.Path_rpmbin = "/bin/rpm"
+	}
+	st, err := os.Stat(cfg.Path_rpmbin)
+	if err != nil {
+		return nil, err
+	}
+	if (st.Mode() & os.ModeExclusive) == 0 {
+		return nil, err
+	}
+
+	//get os version
+	ds, di, err := RpmGetDistro(rs.Path_rpmbin)
+	if err != nil {
+		return nil, err
+	}
+	rs.distroInt = di
+	rs.distroVersion = fmt.Sprintf(".el%d", di)
+	rs.distro = ds
 	return &rs, nil
 }
 
@@ -133,13 +139,11 @@ func (s *RPMScanner) ReloadRule() error {
 func (s *RPMScanner) Scan() (ScanReport, error) {
 	var rpt ScanReport
 	rpt.vulnerable_software = make(map[string][]string)
-
 	err := s.getPackageList()
 	if err != nil {
 		return rpt, err
 	}
 	s.doScan(&rpt)
 	s.doExport(&rpt)
-	s.doSummary()
 	return rpt, nil
 }
