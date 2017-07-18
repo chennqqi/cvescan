@@ -322,7 +322,8 @@ func (s *RPMScanner) doScan(rpt *ScanReport) {
 			//fmt.Println("pkgv1", pkgv1)
 			//fmt.Println("pkgv2", pkgv2)
 			switch RpmCompare(pkgv1, pkgv2) {
-			case 1:
+
+			case -1:
 				rpt.CounterPkg++
 				newver := pkgTags[0] + ":" + version
 				vuls, exist := s.rpm2cve[newver]
@@ -331,9 +332,8 @@ func (s *RPMScanner) doScan(rpt *ScanReport) {
 						rpt.vulnerable_software[pkgv1] = append(rpt.vulnerable_software[pkgv1], cve)
 					}
 				}
-
+			case 1:
 			case 0:
-			case -1:
 			default:
 			}
 		}
