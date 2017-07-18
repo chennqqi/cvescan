@@ -168,11 +168,8 @@ func (s *RPMScanner) loadCveDate() error {
 }
 
 func (s *RPMScanner) getPackageList() error {
-	//packages_list
 	s.packages_list = make(map[string]string)
-	//packages_nice
 	s.packages_nice = make(map[string]string)
-	//packages_installed
 
 	{ //packagelist
 		cmd := exec.Command(s.Path_rpmbin, `--nosignature`, `--nodigest`, `-qa`, `--qf`, `'%{N}-%{epochnum}:%{V}-%{R} %{N}\n'`)
@@ -345,31 +342,35 @@ func (s *RPMScanner) doScan(rpt *ScanReport) {
 
 func (s *RPMScanner) doExport(rpt *ScanReport) {
 	var report CVEReport
-	for cve, _ := range rpt.vulnerable_software {
-		sort.Strings(rpt.vulnerable_software[cve])
-		var score float32
-		if s, exist := s.cve2score[cve]; exist {
-			score = s
-		}
-		var rhsa = "RHSA N/A"
-		if s, exist := s.CVE2RHSA[cve]; exist {
-			rhsa = s
-			/* TODO: s/\s+$// */
-			//rhsa = //
-		}
-		report.RHSA = rhsa
+	for cvepkg, cves := range rpt.vulnerable_software {
+		sort.Strings(rpt.vulnerable_software[cvepkg])
+		for _, cve := range cves {
+			var score float32
+			if s, exist := s.cve2score[cve]; exist {
+				score = s
+			}
+			var rhsa = "RHSA N/A"
+			if s, exist := s.CVE2RHSA[cve]; exist {
+				rhsa = s
+				/* TODO: s/\s+$// */
+				//rhsa = //
+			}
+			report.RHSA = rhsa
 
-		var date = "DATE N/A"
-		if _, exist := s.CVE2DATE[cve]; exist {
-			date = s.CVE2DATE[cve]
-		}
-		report.Date = date
-		report.Score = score
-		rpt.Reports = append(rpt.Reports, report)
+			var date = "DATE N/A"
+			if _, exist := s.CVE2DATE[cve]; exist {
+				date = s.CVE2DATE[cve]
+			}
+			report.Date = date
+			report.Score = score
+			report.CVE = cve
+			report.PkgName = cvepkg
+			rpt.Reports = append(rpt.Reports, report)
 
-		rpt.CounterCVE++
-		if score >= 7.0 {
-			rpt.CounterHighrisk++
+			rpt.CounterCVE++
+			if score >= 7.0 {
+				rpt.CounterHighrisk++
+			}
 		}
 	}
 }
