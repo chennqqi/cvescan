@@ -55,11 +55,15 @@ func main() {
 		fmt.Println("scan error:", err)
 	}
 	fmt.Println("scan result:")
-	fmt.Println("==============================")
-	fmt.Printf("Total CVE:%d, PKG:%d, HIGHRISK:%d",
+	fmt.Println("[===============================================]")
+	fmt.Printf("Total CVE:%d, PKG:%d, HIGHRISK:%d\n",
 		rpt.CounterCVE, rpt.CounterPkg, rpt.CounterHighrisk)
-	for k, c := range rpt.Reports {
-		fmt.Printf("[%d] %s %s @ %s", k, c.CVE, c.RHSA, c.Date)
+        var idx int
+	for pkgName, cves := range rpt.Reports {
+            idx++
+            for k,c := range cves{
+		fmt.Printf("[%d:%d] %s: %s %s @ %s on %f \n", idx, 1+k, pkgName, c.CVE, c.RHSA, c.Date, c.Score)
+            }
 	}
 	fmt.Println("==============================")
 	fmt.Println("scan cost:", time.Now().Sub(tsNow))

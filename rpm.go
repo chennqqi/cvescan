@@ -23,14 +23,11 @@ type ScanReport struct {
 	CounterCVE          int
 	CounterPkg          int
 	CounterHighrisk     int
-	Reports             []CVEReport
+	Reports             map[string][]CVEReport
 	vulnerable_software map[string][]string
 }
 
 type CVEReport struct {
-	PkgName  string `json:"package"`
-	FullName string `json:"fullname"`
-
 	RHSA  string  `json:"rhsa"`
 	Date  string  `json:"date"`
 	CVE   string  `json:"cve"`
@@ -139,6 +136,7 @@ func (s *RPMScanner) ReloadRule() error {
 
 func (s *RPMScanner) Scan() (ScanReport, error) {
 	var rpt ScanReport
+        rpt.Reports = make(map[string][]CVEReport)
 	rpt.vulnerable_software = make(map[string][]string)
 	err := s.getPackageList()
 	if err != nil {
