@@ -56,12 +56,12 @@ func genOSRelease() {
 	}
 }
 
-func (os *OS) getOSInfo() {
+func (self *OS) getOSInfo() {
 	// This seems to be the best and most portable way to detect OS architecture (NOT kernel!)
 	if _, err := os.Stat("/lib64/ld-linux-x86-64.so.2"); err == nil {
-		os.Architecture = "amd64"
+		self.Architecture = "amd64"
 	} else if _, err := os.Stat("/lib/ld-linux.so.2"); err == nil {
-		os.Architecture = "i386"
+		self.Architecture = "i386"
 	}
 
 	if _, err := os.Stat(osReleaseFile); os.IsNotExist(err) {
@@ -77,25 +77,25 @@ func (os *OS) getOSInfo() {
 	s := bufio.NewScanner(f)
 	for s.Scan() {
 		if m := rePrettyName.FindStringSubmatch(s.Text()); m != nil {
-			si.OS.Name = strings.Trim(m[1], `"`)
+			self.Name = strings.Trim(m[1], `"`)
 		} else if m := reID.FindStringSubmatch(s.Text()); m != nil {
-			si.OS.Vendor = strings.Trim(m[1], `"`)
+			self.Vendor = strings.Trim(m[1], `"`)
 		} else if m := reVersionID.FindStringSubmatch(s.Text()); m != nil {
-			si.OS.Version = strings.Trim(m[1], `"`)
+			self.Version = strings.Trim(m[1], `"`)
 		}
 	}
 
-	switch si.OS.Vendor {
+	switch self.Vendor {
 	case "debian":
-		si.OS.Release = slurpFile("/etc/debian_version")
+		self.Release = slurpFile("/etc/debian_version")
 	case "ubuntu":
-		if m := reUbuntu.FindStringSubmatch(si.OS.Name); m != nil {
-			si.OS.Release = m[1]
+		if m := reUbuntu.FindStringSubmatch(self.Name); m != nil {
+			self.Release = m[1]
 		}
 	case "centos":
 		if release := slurpFile("/etc/centos-release"); release != "" {
 			if m := reCentOS.FindStringSubmatch(release); m != nil {
-				si.OS.Release = m[2]
+				self.Release = m[2]
 			}
 		}
 	}
