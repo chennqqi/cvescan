@@ -1,12 +1,19 @@
 # CVESCAN
 
 	a cve scanner
+
+	only test on centos6
 	
 ## feature
 
-	rpm scan (centos,redhat...)
+- [x] rpm scan (centos,redhat...)
+- [ ] dep[ scan (ubuntu,debian...)
+
 
 ## TODO
 	
 	ubuntu
 	
+
+## BUG
+1. 每次扫描结果不一样
