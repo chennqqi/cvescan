@@ -23,6 +23,7 @@ type ScanReport struct {
 	CounterCVE          int                    `json:"cve"`
 	CounterPkg          int                    `json:"pkg"`
 	CounterHighrisk     int                    `json:"high_risk"`
+	Distro              string                 `json:"distro"`
 	Reports             map[string][]CVEReport `json:"reports"`
 	vulnerable_software map[string][]string
 }
@@ -144,5 +145,6 @@ func (s *RPMScanner) Scan() (ScanReport, error) {
 	}
 	s.doScan(&rpt)
 	s.doExport(&rpt)
+	rpt.Distro = s.distro
 	return rpt, nil
 }
