@@ -7,12 +7,12 @@
 ## feature
 
 - [x] rpm scan (centos,redhat...)
-- [ ] dep[ scan (ubuntu,debian...)
+- [ ] dpkg scan (ubuntu,debian...)
 
 
 ## TODO
 	
-	ubuntu
+	dpkg scan
 	
 
 ## BUG
