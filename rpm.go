@@ -20,10 +20,10 @@ type RSConfig struct {
 }
 
 type ScanReport struct {
-	CounterCVE          int
-	CounterPkg          int
-	CounterHighrisk     int
-	Reports             map[string][]CVEReport
+	CounterCVE          int                    `json:"cve"`
+	CounterPkg          int                    `json:"pkg"`
+	CounterHighrisk     int                    `json:"high_risk"`
+	Reports             map[string][]CVEReport `json:"reports"`
 	vulnerable_software map[string][]string
 }
 
@@ -76,9 +76,9 @@ func NewRpmScanner(cfg *RSConfig) (*RPMScanner, error) {
 	if err != nil {
 		return nil, err
 	}
-	if (st.Mode() & os.ModeExclusive) == 0 && false {
-                fmt.Println("bin not excutebale", st.Mode())
-		return nil,  ErrNotExcute
+	if (st.Mode()&os.ModeExclusive) == 0 && false {
+		fmt.Println("bin not excutebale", st.Mode())
+		return nil, ErrNotExcute
 	}
 
 	//get os version
@@ -136,7 +136,7 @@ func (s *RPMScanner) ReloadRule() error {
 
 func (s *RPMScanner) Scan() (ScanReport, error) {
 	var rpt ScanReport
-        rpt.Reports = make(map[string][]CVEReport)
+	rpt.Reports = make(map[string][]CVEReport)
 	rpt.vulnerable_software = make(map[string][]string)
 	err := s.getPackageList()
 	if err != nil {
